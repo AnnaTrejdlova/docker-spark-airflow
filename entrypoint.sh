@@ -5,14 +5,9 @@ set -e
 if [ "$1" = "standalone" ]; then
     airflow db migrate
 
-    # Create admin user if it doesn't exist
-    airflow users create \
-        --username admin \
-        --firstname Admin \
-        --lastname User \
-        --role Admin \
-        --email admin@example.com \
-        --password admin 2>/dev/null || true
+    # Fixed admin/admin login: the simple auth manager only generates passwords
+    # for users missing from this file
+    echo '{"admin": "admin"}' > "${AIRFLOW_HOME}/simple_auth_manager_passwords.json.generated"
 fi
 
 # Execute the main command

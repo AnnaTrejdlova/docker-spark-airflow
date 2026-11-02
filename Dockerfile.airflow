@@ -19,14 +19,14 @@ RUN apt-get update && \
 ENV JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 \
     SPARK_VERSION=3.5.7
 
-# Copy entrypoint script
-COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 USER airflow
 # Install the Spark and HDFS (WebHDFS) providers and Python packages needed by Spark jobs
 # pyspark is pinned to the Spark version running on the cluster; Spark provider 6.x swaps it
 # for pyspark-client 4.x, so stay on 5.x. Pinning apache-airflow stops pip from changing it.
-RUN pip install "apache-airflow==${AIRFLOW_VERSION}" "apache-airflow-providers-apache-spark<6" apache-airflow-providers-apache-hdfs pyspark==${SPARK_VERSION} numpy matplotlib pandas scipy
+# setuptools provides the distutils that pyspark 3.5 still imports (removed in Python 3.12).
+RUN pip install "apache-airflow==${AIRFLOW_VERSION}" "apache-airflow-providers-apache-spark<6" apache-airflow-providers-apache-hdfs pyspark==${SPARK_VERSION} setuptools numpy matplotlib pandas scipy
+
+# Copy entrypoint script (after pip, so editing it doesn't rerun the install)
+COPY --chmod=755 entrypoint.sh /entrypoint.sh
 
 ENTRYPOINT ["/entrypoint.sh"]

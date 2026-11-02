@@ -63,6 +63,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.airflow
+    container_name: airflow
     volumes:
       - ./dags:/opt/airflow/dags
       - ./scripts:/opt/scripts
@@ -73,7 +74,8 @@ services:
     environment:
       - LOAD_EX=n
       # Spark configuration
-      - SPARK_MASTER=spark://spark-master:7077
+      # SparkSubmitOperator reads the master from the spark_default connection (falls back to yarn)
+      - 'AIRFLOW_CONN_SPARK_DEFAULT={"conn_type": "spark", "host": "spark://spark-master", "port": 7077}'
       - PYSPARK_PYTHON=python3.13
     depends_on:
       - spark-master
