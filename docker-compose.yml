@@ -1,0 +1,89 @@
+services:
+  spark-master:
+    image: annatr/apache-spark:3.5.7-java11-python3
+    container_name: spark-master
+    ports:
+      - "9090:8080"
+      - "7077:7077"
+    volumes:
+       - ./apps:/opt/spark-apps
+       - ./data:/opt/spark-data
+    environment:
+      - SPARK_LOCAL_IP=spark-master
+      - SPARK_WORKLOAD=master
+    networks:
+      - hadoop_net
+
+  spark-worker-a:
+    image: annatr/apache-spark:3.5.7-java11-python3
+    container_name: spark-worker-a
+    ports:
+      - "9091:8080"
+      - "7000:7000"
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_DRIVER_MEMORY=1G
+      - SPARK_EXECUTOR_MEMORY=1G
+      - SPARK_WORKLOAD=worker
+      - SPARK_LOCAL_IP=spark-worker-a
+    volumes:
+       - ./apps:/opt/spark-apps
+       - ./data:/opt/spark-data
+    networks:
+      - hadoop_net
+
+  spark-worker-b:
+    image: annatr/apache-spark:3.5.7-java11-python3
+    container_name: spark-worker-b
+    ports:
+      - "9092:8080"
+      - "7001:7000"
+    depends_on:
+      - spark-master
+    environment:
+      - SPARK_MASTER=spark://spark-master:7077
+      - SPARK_WORKER_CORES=1
+      - SPARK_WORKER_MEMORY=1G
+      - SPARK_DRIVER_MEMORY=1G
+      - SPARK_EXECUTOR_MEMORY=1G
+      - SPARK_WORKLOAD=worker
+      - SPARK_LOCAL_IP=spark-worker-b
+    volumes:
+        - ./apps:/opt/spark-apps
+        - ./data:/opt/spark-data
+    networks:
+      - hadoop_net
+
+  # --- AIRFLOW ---
+  airflow:
+    build:
+      context: .
+      dockerfile: Dockerfile.airflow
+    volumes:
+      - ./dags:/opt/airflow/dags
+      - ./scripts:/opt/scripts
+      - ./data:/opt/spark-data
+      - ./apps:/opt/spark-apps
+    ports:
+      - "8085:8080" # Airflow UI
+    environment:
+      - LOAD_EX=n
+      # Spark configuration
+      - SPARK_HOME=/usr/local/lib/python3.13/site-packages/pyspark
+      - SPARK_MASTER=spark://spark-master:7077
+    depends_on:
+      - spark-master
+    command: standalone
+    networks:
+      - hadoop_net
+
+
+networks:
+  hadoop_net:
+    name: hadoop_net
+    external: true
+

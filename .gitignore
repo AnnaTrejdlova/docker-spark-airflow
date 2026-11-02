@@ -1,0 +1,13 @@
+# Python caches
+__pycache__/
+*.pyc
+
+# Generated output
+output.txt
+report.html
+
+# Old Spark 3.4.4 / Debian buster variant of the Dockerfile
+Dockerfile copy
+
+# Trivy report template
+html.tpl
