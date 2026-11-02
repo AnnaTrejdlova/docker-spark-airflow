@@ -1,5 +1,5 @@
 ```bash
-docker build -t annatr/apache-spark:3.5.7-java11-python3 .
+docker build -t annatr/apache-spark:3.5.7-java11-python3.13 .
 docker-compose up -d
 ```
 

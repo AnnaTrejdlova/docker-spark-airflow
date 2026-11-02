@@ -1,4 +1,4 @@
-FROM apache/airflow:slim-3.1.7-python3.13
+FROM apache/airflow:slim-3.3.2-python3.13
 
 USER root
 # Install Java (required for Spark)
@@ -10,15 +10,23 @@ RUN apt-get update && \
     apt-get install -y temurin-17-jdk && \
     apt-get clean
 
+# gssapi (Kerberos support pulled in by the HDFS provider) is built from source
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends gcc libkrb5-dev && \
+    apt-get clean
+
 # Set JAVA_HOME
-ENV JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
+ENV JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 \
+    SPARK_VERSION=3.5.7
 
 # Copy entrypoint script
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 
 USER airflow
-# Install the Spark provider and Python packages needed by Spark jobs
-RUN pip install apache-airflow-providers-apache-spark numpy matplotlib pandas scipy
+# Install the Spark and HDFS (WebHDFS) providers and Python packages needed by Spark jobs
+# pyspark is pinned to the Spark version running on the cluster; Spark provider 6.x swaps it
+# for pyspark-client 4.x, so stay on 5.x. Pinning apache-airflow stops pip from changing it.
+RUN pip install "apache-airflow==${AIRFLOW_VERSION}" "apache-airflow-providers-apache-spark<6" apache-airflow-providers-apache-hdfs pyspark==${SPARK_VERSION} numpy matplotlib pandas scipy
 
 ENTRYPOINT ["/entrypoint.sh"]

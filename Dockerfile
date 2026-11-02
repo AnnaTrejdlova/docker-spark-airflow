@@ -1,27 +1,35 @@
 # builder step used to download and configure spark environment
-FROM eclipse-temurin:11.0.29_7-jre-noble AS builder
-
-# Switch to archived repositories
-# RUN sed -i 's|http://deb.debian.org/debian|https://archive.debian.org/debian|g' /etc/apt/sources.list && \
-#     sed -i 's|http://security.debian.org/debian-security|https://archive.debian.org/debian-security|g' /etc/apt/sources.list && \
-#     echo 'Acquire::Check-Valid-Until "false";' > /etc/apt/apt.conf.d/99no-check-valid
+# Debian 13 ships Python 3.13 (Ubuntu noble only has 3.12)
+FROM debian:13 AS builder
 
 # Add Dependencies for PySpark
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends curl vim wget software-properties-common ssh net-tools ca-certificates
-RUN apt-get install -y --no-install-recommends python3 python3-pip python3-numpy python3-matplotlib python3-scipy python3-pandas python3-simpy
+    apt-get install -y --no-install-recommends curl vim wget ssh net-tools ca-certificates
 
-RUN update-alternatives --install "/usr/bin/python" "python" "$(which python3)" 1
+# Add Eclipse Temurin repository for OpenJDK 11
+RUN mkdir -p /etc/apt/keyrings \
+    && wget -O - https://packages.adoptium.net/artifactory/api/gpg/key/public | tee /etc/apt/keyrings/adoptium.asc \
+    && echo "deb [signed-by=/etc/apt/keyrings/adoptium.asc] https://packages.adoptium.net/artifactory/deb $(. /etc/os-release && echo $VERSION_CODENAME) main" | tee /etc/apt/sources.list.d/adoptium.list
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends temurin-11-jre \
+    && ln -s /usr/lib/jvm/temurin-11-jre-$(dpkg --print-architecture) /usr/lib/jvm/java-11
+
+ENV JAVA_HOME=/usr/lib/jvm/java-11
+RUN apt-get install -y --no-install-recommends python3.13 python3-pip python3-numpy python3-matplotlib python3-scipy python3-pandas python3-simpy
+
+RUN update-alternatives --install "/usr/bin/python" "python" "$(which python3.13)" 1
 
 # Fix the value of PYTHONHASHSEED
 # Note: this is needed when you use Python 3.3 or greater
 ENV SPARK_VERSION=3.5.7 \
 HADOOP_VERSION=3 \
 SPARK_HOME=/opt/spark \
+PYSPARK_PYTHON=python3.13 \
 PYTHONHASHSEED=1
 
 # Download and uncompress spark from the apache archive
-RUN wget --no-verbose -O apache-spark.tgz "https://dlcdn.apache.org/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" \
+RUN wget --no-verbose -O apache-spark.tgz "https://archive.apache.org/dist/spark/spark-${SPARK_VERSION}/spark-${SPARK_VERSION}-bin-hadoop${HADOOP_VERSION}.tgz" \
 && mkdir -p /opt/spark \
 && tar -xf apache-spark.tgz -C /opt/spark --strip-components=1 \
 && rm apache-spark.tgz

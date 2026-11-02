@@ -1,6 +1,6 @@
 services:
   spark-master:
-    image: annatr/apache-spark:3.5.7-java11-python3
+    image: annatr/apache-spark:3.5.7-java11-python3.13
     container_name: spark-master
     ports:
       - "9090:8080"
@@ -15,7 +15,7 @@ services:
       - hadoop_net
 
   spark-worker-a:
-    image: annatr/apache-spark:3.5.7-java11-python3
+    image: annatr/apache-spark:3.5.7-java11-python3.13
     container_name: spark-worker-a
     ports:
       - "9091:8080"
@@ -37,7 +37,7 @@ services:
       - hadoop_net
 
   spark-worker-b:
-    image: annatr/apache-spark:3.5.7-java11-python3
+    image: annatr/apache-spark:3.5.7-java11-python3.13
     container_name: spark-worker-b
     ports:
       - "9092:8080"
@@ -73,8 +73,8 @@ services:
     environment:
       - LOAD_EX=n
       # Spark configuration
-      - SPARK_HOME=/usr/local/lib/python3.13/site-packages/pyspark
       - SPARK_MASTER=spark://spark-master:7077
+      - PYSPARK_PYTHON=python3.13
     depends_on:
       - spark-master
     command: standalone
