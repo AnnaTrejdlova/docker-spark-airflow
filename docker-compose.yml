@@ -69,6 +69,8 @@ services:
       - ./scripts:/opt/scripts
       - ./data:/opt/spark-data
       - ./apps:/opt/spark-apps
+      # Google Cloud credentials (gcp/credentials.json, not committed)
+      - ./gcp:/opt/gcp:ro
     ports:
       - "8085:8080" # Airflow UI
     environment:
@@ -77,6 +79,16 @@ services:
       # SparkSubmitOperator reads the master from the spark_default connection (falls back to yarn)
       - 'AIRFLOW_CONN_SPARK_DEFAULT={"conn_type": "spark", "host": "spark://spark-master", "port": 7077}'
       - PYSPARK_PYTHON=python3.13
+      # Google Cloud (kmeans_gcp_dag.py); values come from the .env file next to this file
+      - GCP_PROJECT_ID=${GCP_PROJECT_ID:-}
+      - GCP_REGION=${GCP_REGION:-europe-west1}
+      - GCP_BUCKET=${GCP_BUCKET:-}
+      # Read by google-auth; works with a service account key or a gcloud ADC file
+      - GOOGLE_APPLICATION_CREDENTIALS=/opt/gcp/credentials.json
+      # Default project for google-auth; a gcloud ADC file has none, which only logs a warning
+      - GOOGLE_CLOUD_PROJECT=${GCP_PROJECT_ID:-}
+      # Empty connection = use GOOGLE_APPLICATION_CREDENTIALS
+      - 'AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT={"conn_type": "google_cloud_platform"}'
     depends_on:
       - spark-master
     command: standalone

@@ -26,6 +26,9 @@ USER airflow
 # setuptools provides the distutils that pyspark 3.5 still imports (removed in Python 3.12).
 RUN pip install "apache-airflow==${AIRFLOW_VERSION}" "apache-airflow-providers-apache-spark<6" apache-airflow-providers-apache-hdfs pyspark==${SPARK_VERSION} setuptools numpy matplotlib pandas scipy
 
+# Google provider for the Dataproc / Cloud Storage DAG (separate layer, so the install above stays cached)
+RUN pip install "apache-airflow==${AIRFLOW_VERSION}" apache-airflow-providers-google
+
 # Copy entrypoint script (after pip, so editing it doesn't rerun the install)
 COPY --chmod=755 entrypoint.sh /entrypoint.sh
 

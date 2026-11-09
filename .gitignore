@@ -9,5 +9,9 @@ report.html
 # Old Spark 3.4.4 / Debian buster variant of the Dockerfile
 Dockerfile copy
 
+# Google Cloud settings and credentials
+.env
+gcp/
+
 # Trivy report template
 html.tpl
