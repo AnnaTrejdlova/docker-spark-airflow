@@ -65,6 +65,8 @@ services:
       dockerfile: Dockerfile.airflow
     container_name: airflow
     volumes:
+      # Keeps the SQLite metadata DB (DAG run history) and task logs across rebuilds
+      - airflow_home:/opt/airflow
       - ./dags:/opt/airflow/dags
       - ./scripts:/opt/scripts
       - ./data:/opt/spark-data
@@ -95,6 +97,9 @@ services:
     networks:
       - hadoop_net
 
+
+volumes:
+  airflow_home:
 
 networks:
   hadoop_net:
